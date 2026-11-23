@@ -3,8 +3,8 @@ from fractions import Fraction
 from app.units import demand_kw
 
 
-def charge_rows(entries, rate):
-    exact = [Fraction(row["w_sum"] * rate, 3000) for row in entries]
+def charge_rows(entries, rate, denominator=3000):
+    exact = [Fraction(row["w_sum"] * rate, denominator) for row in entries]
     floor = [int(value) for value in exact]
     total = int(sum(exact) + Fraction(1, 2))
     order = sorted(range(len(entries)), key=lambda i: (-(exact[i] - floor[i]), entries[i]["account"] is None, entries[i]["account"] or ""))

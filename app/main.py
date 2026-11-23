@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from app.contract import STAGES
 from app.errors import InputError, input_error_handler, validation_error_handler
 from app.runs import router as runs_router
+from app.response_orders import router as response_orders_router
 from app.settings import PROJECT, ROOT, RULE_VERSION, TITLE
 from app.store import Archive
 from app.web import router as web_router
@@ -21,6 +22,7 @@ def create_app(path=None):
     for _, _, _, router in STAGES:
         app.include_router(router)
     app.include_router(runs_router)
+    app.include_router(response_orders_router)
     app.include_router(web_router)
 
     @app.get("/api/health", tags=["服务状态"])

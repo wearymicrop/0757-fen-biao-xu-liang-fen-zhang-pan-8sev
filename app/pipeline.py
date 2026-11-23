@@ -1,14 +1,17 @@
-from app.contract import TABLES, STAGES
+from app.contract import OPTIONAL_TABLES, STAGES, TABLES
 from app.errors import InputError
 from app.manifest import canonical
 
 
 def validate(data):
-    if not isinstance(data, dict) or set(data) != set(TABLES) | {"config"}:
+    if not isinstance(data, dict) or not set(data) <= set(TABLES) | set(OPTIONAL_TABLES) | {"config"}:
+        raise InputError("INPUT_TABLES", "输入表或批次设置不齐")
+    data = {**{name: [] for name in OPTIONAL_TABLES}, **data}
+    if "config" not in data or set(data) != set(TABLES) | set(OPTIONAL_TABLES) | {"config"}:
         raise InputError("INPUT_TABLES", "输入表或批次设置不齐")
     if not isinstance(data["config"], dict):
         raise InputError("INPUT_CONFIG", "批次设置有误")
-    for name in TABLES:
+    for name in (*TABLES, *OPTIONAL_TABLES):
         table = data[name]
         if not isinstance(table, list) or len(table) > 10000 or any(not isinstance(row, dict) for row in table):
             raise InputError("INPUT_ROWS", f"{name} 行格式有误或超过一万行")
@@ -20,7 +23,7 @@ def validate(data):
 
 
 def calculate(data, until=None):
-    validate(data)
+    data = validate(data)
     result = {}
     for name, _, operation, _ in STAGES:
         result[name] = operation(data, result)

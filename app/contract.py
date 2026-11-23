@@ -12,8 +12,11 @@ from app.modules.m6_balance.handler import router as balance_router
 from app.modules.m6_balance.rules import run as balance
 from app.modules.m7_billing.handler import router as billing_router
 from app.modules.m7_billing.rules import run as billing
+from app.modules.m8_response.handler import router as response_router
+from app.modules.m8_response.rules import run as response
 
 TABLES = ("gateways", "readings", "mappings")
+OPTIONAL_TABLES = ("events", "actions")
 HOME = "peak"
 STAGES = (
     ("sampling", "网关取样", sampling, sampling_router),
@@ -23,4 +26,5 @@ STAGES = (
     ("allocation", "住户分摊", allocation, allocation_router),
     ("balance", "功率勾稽", balance, balance_router),
     ("billing", "账单证据", billing, billing_router),
+    ("response", "响应补偿", response, response_router),
 )

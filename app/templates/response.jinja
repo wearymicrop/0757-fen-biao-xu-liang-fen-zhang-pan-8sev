@@ -1,0 +1,64 @@
+{% from 'proof.jinja' import evidence %}
+<div class="panel-title"><h2>削峰响应补偿单</h2><span>
+  {% if current.state=='ready' %}可发布
+  {% elif current.state=='review' %}可发布 · 待复核
+  {% else %}阻断 · 不能发布{% endif %}</span></div>
+
+{% if current.event %}
+<div class="event-meta">
+  <p>事件编号 <code>{{ current.event.event_id }}</code></p>
+  <p>基线对照窗 {{ current.event.baseline_window.label }} → 响应窗 {{ current.event.response_window.label }} · 共 {{ current.windows }} 个 15 分钟窗</p>
+</div>
+
+<div class="scroll"><table><thead><tr><th>分表 / 账户</th><th>操作依据</th><th class="num">基线 kW</th><th class="num">响应 kW</th><th class="num">有效削减 kW</th><th class="num">削减 W</th><th>采信结论与来源</th></tr></thead><tbody>
+{% for row in current.meters %}
+<tr>
+  <td>{{ row.meter }}<small>{{ row.account or '未映射' }} · {{ row.mapping_state or '—' }}</small></td>
+  <td>{{ row.action_kind or '无记录' }}{% if row.action_sources %}{{ evidence(row.action_sources) }}{% endif %}</td>
+  <td class="num">{{ row.baseline_kw or '缺样' }}</td>
+  <td class="num">{{ row.response_kw or '缺样' }}</td>
+  <td class="num">{{ row.reduction_kw or '—' }}</td>
+  <td class="num">{{ row.reduction_w if row.reduction_w is not none else '—' }}</td>
+  <td>
+    {% if row.bucket=='natural' %}<b class="tag muted">自然减产 · 剔除</b>
+    {% elif row.bucket=='shutdown' %}<b class="tag ok">主动停机 · 采信</b>
+    {% elif row.bucket=='curtail' %}<b class="tag ok">主动压产 · 采信</b>
+    {% else %}<b class="tag warn">未采信 · 不补偿</b>{% endif %}
+    {{ evidence(row.sources) }}
+  </td>
+</tr>
+{% else %}
+<tr><td colspan="7">暂无可核算分表。</td></tr>
+{% endfor %}
+</tbody></table></div>
+
+<div class="reconcile">
+  <div class="scroll"><table><thead><tr><th>核减勾稽（整瓦）</th><th class="num">数值 W</th></tr></thead><tbody>
+    <tr><td>总表核减（事件前后对照）</td><td class="num">{{ current.main_reduction_w_sum if current.main_reduction_w_sum is not none else '—' }}</td></tr>
+    <tr><td>检修自然降负荷（剔除）</td><td class="num">{{ current.natural_w_sum if current.natural_w_sum is not none else '—' }}</td></tr>
+    <tr><td>各账户有效削减合计</td><td class="num">{{ current.compensable_w_sum if current.compensable_w_sum is not none else '—' }}</td></tr>
+    <tr><td>未采信削减（缺凭证）</td><td class="num">{{ current.unverified_w_sum if current.unverified_w_sum is not none else '—' }}</td></tr>
+    <tr><td>总分表差变化</td><td class="num">{{ current.residual_change_w_sum if current.residual_change_w_sum is not none else '—' }}</td></tr>
+  </tbody></table></div>
+
+  <div class="scroll"><table><thead><tr><th>账户补偿明细</th><th class="num">削减 kW</th><th class="num">尾差 分</th><th class="num">应补 元</th></tr></thead><tbody>
+  {% for line in current.lines %}
+    <tr><td>{{ line.account }}<small>{{ line.meters|join('、') }}</small></td><td class="num">{{ line.kw }}</td><td class="num">{{ line.tail_cent }}</td><td class="num">{{ line.amount_cents|yuan }}</td></tr>
+  {% else %}
+    <tr><td colspan="4">暂无可补偿账户。</td></tr>
+  {% endfor %}
+  </tbody></table></div>
+</div>
+<div class="footnote">费率 {{ current.rate_cents_per_kw|yuan }} 元/kW · 补偿合计
+  <strong>{% if current.total_cents is not none %}{{ current.total_cents|yuan }} 元{% else %}—{% endif %}</strong>
+  · 尾差合计 {{ current.difference_cents if current.difference_cents is not none else '—' }} 分</div>
+
+<form id="order-form" data-event="{{ current.event.event_id }}" data-sample="{{ sample }}">
+  <button type="submit" {% if current.state=='held' %}disabled{% endif %}>发布唯一补偿单</button>
+  <button type="button" id="order-rerun" {% if current.state=='held' %}disabled{% endif %}>同事件重跑</button>
+  <a id="order-export" class="button" hidden download>下载归档</a>
+  <span id="order-info" role="status"></span>
+</form>
+{% else %}
+<p class="placeholder">本批次未登记削峰响应事件（events 表），无法生成补偿单。</p>
+{% endif %}

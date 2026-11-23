@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ project }} · {{ titles[stage] }}</title>
 <link rel="stylesheet" href="/static/theme.css"><link rel="stylesheet" href="/static/layout.css"><link rel="stylesheet" href="/static/components.css">
-<script src="/static/curve.js" defer></script><script src="/static/batch.js" defer></script></head>
+<script src="/static/curve.js" defer></script><script src="/static/batch.js" defer></script><script src="/static/order.js" defer></script></head>
 <body>
 <aside><a class="mark" href="/?sample={{ sample }}"><span>需</span>{{ project }}</a><p class="nav-title">电表核算</p>
 <nav aria-label="电表核算">{% for id,caption in titles.items() %}<a href="/work/{{ id }}?sample={{ sample }}" {% if id==stage %}aria-current="page"{% endif %}>{{ caption }}</a>{% endfor %}</nav>
@@ -11,7 +11,17 @@
 <main><header><div><p class="site">{{ result.sampling.site }} / 十五分钟计量</p><h1>{{ titles[stage] }}</h1></div>
 <form id="batch" data-sample="{{ sample }}"><label>样例 <select id="sample" name="sample">{% for id,label in samples.items() %}<option value="{{ id }}" {% if id==sample %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><button>保存账单证据</button></form></header>
 {% set bill = result.billing %}
-<div class="kpis"><div>共同峰 <strong id="headline-peak">{{ result.balance.main_kw or '—' }} <small>kW</small></strong></div><div>已归因 <strong>{{ result.balance.assigned_kw or '—' }} <small>kW</small></strong></div><div>未分配 <strong>{{ result.balance.unallocated_kw or '—' }} <small>kW</small></strong></div><div>计费合计 <strong>{% if bill.total_cents is not none %}{{ bill.total_cents|yuan }}{% else %}—{% endif %} <small>元</small></strong></div></div>
+{% set resp = result.response %}
+<div class="kpis">
+  {% if stage=='response' and resp.event %}
+  <div>总表核减 <strong>{{ resp.main.reduction_kw or '—' }} <small>kW</small></strong></div>
+  <div>自然减产剔除 <strong>{{ resp.natural_kw or '—' }} <small>kW</small></strong></div>
+  <div>有效削减 <strong>{{ resp.compensable_kw or '—' }} <small>kW</small></strong></div>
+  <div>补偿合计 <strong>{% if resp.total_cents is not none %}{{ resp.total_cents|yuan }}{% else %}—{% endif %} <small>元</small></strong></div>
+  {% else %}
+  <div>共同峰 <strong id="headline-peak">{{ result.balance.main_kw or '—' }} <small>kW</small></strong></div><div>已归因 <strong>{{ result.balance.assigned_kw or '—' }} <small>kW</small></strong></div><div>未分配 <strong>{{ result.balance.unallocated_kw or '—' }} <small>kW</small></strong></div><div>计费合计 <strong>{% if bill.total_cents is not none %}{{ bill.total_cents|yuan }}{% else %}—{% endif %} <small>元</small></strong></div>
+  {% endif %}
+</div>
 <div class="grid">
 <section class="panel workspace">{% include stage ~ '.jinja' %}</section>
 <section class="panel contributions"><div class="panel-title"><h2>峰时去向</h2><small>{{ result.peak.peak.label if result.peak.peak else '未定' }}</small></div>

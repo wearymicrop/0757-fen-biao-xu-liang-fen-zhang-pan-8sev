@@ -10,6 +10,8 @@ docker compose up --build
 
 `docker compose exec -T app pytest -q` 运行测试。命名卷 `records` 保存归档。宿主可用 `DB_PATH` 指定 SQLite 文件，安装 `requirements.txt` 后执行 `uvicorn app.main:app --port 18451`。
 
+削峰响应补偿在「响应补偿」页：样例 `response` 对照 11/23 当晚基线窗（18:00–19:00）与响应窗（19:00–20:00），检修表 M-001 的自然降负荷被剔除，M-002 主动停机与 M-003 运行中主动压产计入有效削减；页面展示事件前后负荷对照、每表采信依据与整瓦勾稽，点「发布唯一补偿单」后可下载归档，同事件重跑只复用原单。`response_dirty` 样例在响应窗缺一格读数，补偿单阻断不能发布。
+
 - [七个模块与陷阱](docs/DEPTH.md)
 - [计量字段、单位和时间](docs/DATA-DICTIONARY.md)
 - [接口与证据](docs/API.md)
